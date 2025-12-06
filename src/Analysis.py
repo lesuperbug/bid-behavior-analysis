@@ -1,6 +1,6 @@
 #%% Preliminaries
 
-import os
+import pathlib as Path
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
@@ -11,9 +11,6 @@ import requests                                # HTTP requests
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-# Working Directory
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
 #%% Functions
 
 def retrieve_allowed_assets():
@@ -21,7 +18,7 @@ def retrieve_allowed_assets():
     This function will prepare the allowed asset list based on fuel types
     '''
 
-    filename = r'CSD Generation (Hourly) - 2020-01 to 2020-06.csv'
+    filename = '../data/CSD Generation (Hourly) - 2020-01 to 2020-06.csv'
     fuel_ref_df = pd.read_csv(filename)
     fuel_ref_df = fuel_ref_df[~fuel_ref_df['Asset Short Name'].duplicated()].reset_index()
     fuel_ref_df = fuel_ref_df[~fuel_ref_df['Fuel Type'].isin(['WIND', 'SOLAR'])].reset_index()
@@ -34,7 +31,7 @@ def retrieve_nd_gen():
     This function retrievs non-dispatchable generation data as Datarame
     '''
 
-    filename = r'Wind and Solar Generation History.xlsx'
+    filename = '../data/Wind and Solar Generation History.xlsx'
     nd_gen_df = pd.read_excel(filename)
     nd_gen_df.rename(columns={'Timestamp (UTC)':'DateTime'}, inplace=True)
     nd_gen_df['DateTime'] = pd.to_datetime(nd_gen_df['DateTime'])
@@ -48,16 +45,16 @@ def retrieve_nd_gen():
 def make_aeso_api_call(date):
     '''
     This function makes a single API call to aeso API, requesting merit order data for the date given as
-    the date paramater. It returns the data portion of the APU response.
+    the date paramater. It returns the data portion of the API response.
     '''
 
     # Parameters for API call
-    key = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0a3hoajQiLCJpYXQiOjE2ODY0NDM3MzF9.VQyw1jcoYmGO4iQscQalEnpYinMMUAW4qGHGl1Mqxms'
-    base_url = 'https://api.aeso.ca/report/v1/meritOrder/energy'
+    key = '3feeb1532ff04f9194ff00351162b82c'
+    base_url = 'https://apimgw.aeso.ca/public/energymeritorder-api/v1/meritOrder/energy'
 
     date = pd.Timestamp(date)
     params = {'startDate': date.strftime('%Y-%m-%d')}
-    headers = {'accept': 'application/json', 'X-API-Key': key}
+    headers = {'API-KEY': key}
 
     try:
         # Retrieve API repsonse
@@ -140,7 +137,7 @@ def build_unclean_panel(agg_api):
 def clean_panel(daily_data):
 
     # Declaring relevant variables
-    company_keys_path = r'company name reference.csv'
+    company_keys_path = '../data/company name reference.csv'
     company_keys = pd.read_csv(company_keys_path)
     asset_keys = list(retrieve_allowed_assets()['Allowed Assets'])
 
@@ -217,12 +214,12 @@ def get_data():
 def get_sum_stats():
 
     sum_stats_plant = analysis_panel.groupby('Plant')
-    sum_stats_plant['Block Size - Plant'].describe().to_excel('Plant - Block Size.xlsx')
-    sum_stats_plant['VWAB - Plant'].describe().to_excel('Plant - VWAB.xlsx')
+    sum_stats_plant['Block Size - Plant'].describe().to_excel('../output/Plant - Block Size.xlsx')
+    sum_stats_plant['VWAB - Plant'].describe().to_excel('../output/Plant - VWAB.xlsx')
 
     sum_stats_owner = analysis_panel.groupby('Owner')
-    sum_stats_owner['Block Size - Owner'].describe().to_excel('Owner - Block Size.xlsx')
-    sum_stats_owner['VWAB - Owner'].describe().to_excel('Owner - VWAB.xlsx')
+    sum_stats_owner['Block Size - Owner'].describe().to_excel('../output/Owner - Block Size.xlsx')
+    sum_stats_owner['VWAB - Owner'].describe().to_excel('../output/Owner - VWAB.xlsx')
 
     return
 
@@ -230,10 +227,13 @@ def get_sum_stats():
 
 def run_regression(panel, regressand, entity):
     '''
-    This function does the relevant work to rin the regression (add constants, etc.)
+    This function does the relevant work to run the regression (add constants, etc.)
     '''
     
     # Basics
+    output_dir = Path('../output/')
+    summary_path = output_dir / f"{entity} - {regressand} Summary.txt"
+    coeff_path = output_dir / f"{entity} - {regressand} Coefficients.csv"
     panel = panel.copy()    
     panel['Month'] = panel['DateTime'].dt.month
     panel['Month'] = panel['Month'].astype('category')
@@ -248,7 +248,19 @@ def run_regression(panel, regressand, entity):
     # Regression and results
     regression = PanelOLS(y, X, entity_effects=True, time_effects=True, drop_absorbed=True)
     model = regression.fit(cov_type="clustered", cluster_entity=True, cluster_time=True)
-    print(model.summary)
+
+    # Produce outputs
+    ci = model.conf_int()
+    coeff_table = pd.DataFrame({
+        "coef":     model.params,
+        "std_err":  model.std_errors,
+        "t_stat":   model.tstats,
+        "p_value":  model.pvalues,
+        "ci_lower": ci.iloc[:,0],
+        "ci_upper": ci.iloc[:,1]})
+    with summary_path.open("w", encoding="utf-8") as f:
+        f.write(model.summary.as_text())
+    coeff_table.to_csv(coeff_path)
 
     return model
 
@@ -271,6 +283,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # Note: This will only run if this script is executed directly, and not if it is imported as a module.
 
 #%% End of File

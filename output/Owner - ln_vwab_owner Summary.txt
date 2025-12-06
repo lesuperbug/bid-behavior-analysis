@@ -1,0 +1,44 @@
+                          PanelOLS Estimation Summary                           
+================================================================================
+Dep. Variable:          ln_vwab_owner   R-squared:                        0.0109
+Estimator:                   PanelOLS   R-squared (Between):             -0.2396
+No. Observations:             1565392   R-squared (Within):               0.0159
+Date:                Fri, Dec 05 2025   R-squared (Overall):              0.0034
+Time:                        20:15:25   Log-likelihood                -1.937e+06
+Cov. Estimator:             Clustered                                           
+                                        F-statistic:                      1324.5
+Entities:                          41   P-value                           0.0000
+Avg Obs:                    3.818e+04   Distribution:              F(13,1565315)
+Min Obs:                       5932.0                                           
+Max Obs:                    1.884e+05   F-statistic (robust):         -3.922e+04
+                                        P-value                           1.0000
+Time periods:                      24   Distribution:              F(13,1565315)
+Avg Obs:                    6.522e+04                                           
+Min Obs:                    6.481e+04                                           
+Max Obs:                    6.566e+04                                           
+                                                                                
+                             Parameter Estimates                              
+==============================================================================
+            Parameter  Std. Err.     T-stat    P-value    Lower CI    Upper CI
+------------------------------------------------------------------------------
+ln_solar      -0.0071     0.0065    -1.1026     0.2702     -0.0199      0.0056
+AIL        -6.061e-05  9.585e-05    -0.6323     0.5272     -0.0002      0.0001
+Month.1        4.5112     0.9287     4.8574     0.0000      2.6909      6.3314
+Month.2        4.4143     0.9414     4.6891     0.0000      2.5692      6.2593
+Month.3        4.3831     0.9102     4.8154     0.0000      2.5991      6.1671
+Month.4        4.4452     0.8806     5.0481     0.0000      2.7193      6.1711
+Month.5        4.4358     0.8397     5.2828     0.0000      2.7901      6.0815
+Month.6        4.4776     0.8963     4.9956     0.0000      2.7209      6.2344
+Month.7        4.5545     0.8881     5.1285     0.0000      2.8139      6.2951
+Month.8        4.5569     0.8637     5.2758     0.0000      2.8640      6.2498
+Month.9        4.4932     0.8913     5.0413     0.0000      2.7463      6.2401
+Month.10       4.5545     0.8668     5.2546     0.0000      2.8557      6.2533
+Month.11       4.6861     0.9953     4.7080     0.0000      2.7352      6.6369
+Month.12       4.4587     0.9257     4.8166     0.0000      2.6444      6.2730
+==============================================================================
+
+F-test for Poolability: 1.118e+05
+P-value: 0.0000
+Distribution: F(63,1565315)
+
+Included effects: Entity, Time
